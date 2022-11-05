@@ -1,44 +1,36 @@
 import asyncio
+from asyncio import StreamReader, StreamWriter
 
-import aiohttp
 import click
 from aioconsole import ainput, aprint
 
 PROMPT = 'You: '
 
 
-async def read(ws):
-    async for msg in ws:
-        await aprint(f'\r{msg.data}\n{PROMPT}', end='')
+async def read(reader: StreamReader) -> None:
+    while data := await reader.readline():
+        await aprint(f'\r{data.decode()}{PROMPT}', end='')
 
 
-async def write(ws):
+async def write(username: str, writer: StreamWriter) -> None:
     while True:
-        raw = await ainput(PROMPT)
-        msg = raw.strip()
-
-        if msg:
-            await ws.send_str(msg)
-
-        if msg == 'exit':
-            await ws.close()
-            break
+        if data := (await ainput(PROMPT)).strip():
+            writer.write(f'{username}: {data}\n'.encode())
+            await writer.drain()
 
 
-async def main(username, host, port):
-    session = aiohttp.ClientSession(raise_for_status=True)
-    url = f'http://{host}:{port}/chats?username={username}'
-
-    async with session.ws_connect(url) as ws:
-        await asyncio.gather(write(ws), read(ws))
+async def main(username: str, host: str, port: str) -> None:
+    reader, writer = await asyncio.open_connection(host, port)
+    writer.write(f'{username}\n'.encode())
+    await asyncio.gather(write(username, writer), read(reader))
 
 
 @click.command()
 @click.option('-u', '--username', required=True)
 @click.option('-h', '--host', default='0.0.0.0')
 @click.option('-p', '--port', default='8080')
-def client(username, host, port):
-    asyncio.run(main(username, host, port))
+def client(**kwargs):
+    asyncio.run(main(**kwargs))
 
 
 if __name__ == '__main__':
