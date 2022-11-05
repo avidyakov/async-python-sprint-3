@@ -11,7 +11,7 @@ clients: dict[str, list[StreamWriter]] = {}
 messages: deque[bytes] = deque(maxlen=20)
 
 
-async def client_connected(reader: StreamReader, writer: StreamWriter):
+async def client_connected(reader: StreamReader, writer: StreamWriter) -> None:
     username = (await reader.readline()).decode().strip()
     logger.info(f'Start serving {username}')
     clients.setdefault(username, []).append(writer)
@@ -31,7 +31,7 @@ async def client_connected(reader: StreamReader, writer: StreamWriter):
     writer.close()
 
 
-async def write_data(writer: StreamWriter, data: bytes):
+async def write_data(writer: StreamWriter, data: bytes) -> None:
     writer.write(data)
     await writer.drain()
 
@@ -46,8 +46,8 @@ async def main(host: str, port: int) -> None:
 @click.command()
 @click.option('-h', '--host', default='0.0.0.0')
 @click.option('-p', '--port', default='8080')
-def server(host, port):
-    asyncio.run(main(host, port))
+def server(**kwargs) -> None:
+    asyncio.run(main(**kwargs))
 
 
 if __name__ == '__main__':

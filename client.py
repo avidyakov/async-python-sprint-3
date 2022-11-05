@@ -29,7 +29,7 @@ async def main(username: str, host: str, port: str) -> None:
 @click.option('-u', '--username', required=True)
 @click.option('-h', '--host', default='0.0.0.0')
 @click.option('-p', '--port', default='8080')
-def client(**kwargs):
+def client(**kwargs) -> None:
     asyncio.run(main(**kwargs))
 
 
